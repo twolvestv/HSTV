@@ -229,7 +229,7 @@
       tickerEl.textContent = text;
       // Speed: roughly 90 pixels per second, scaled to text length
       const estimatedWidth = text.length * 13; // rough px estimate
-      const duration = Math.max(20, estimatedWidth / 150);
+      const duration = Math.max(20, estimatedWidth / 180);
       tickerEl.style.animation = 'none';
       // force reflow so the animation restarts cleanly
       void tickerEl.offsetWidth;
