@@ -123,7 +123,7 @@
   .ticker-content {
     position: absolute;
     top: 0;
-    left: 100%;
+    left: 0;
     height: 100%;
     display: flex;
     align-items: center;
@@ -135,7 +135,7 @@
 
   @keyframes scroll-left {
     from { transform: translateX(0); }
-    to   { transform: translateX(-100%); }
+    to   { transform: translateX(-50%); }
   }
 </style>
 </head>
@@ -172,7 +172,7 @@
   </div>
 
   <div class="ticker-bar">
-    <div class="ticker-label">NEWS</div>
+    <div class="ticker-label">BULLETIN</div>
     <div class="ticker-track">
       <div class="ticker-content" id="ticker-content">Loading bulletin&hellip;</div>
     </div>
@@ -266,8 +266,11 @@
     const tickerEl = document.getElementById('ticker-content');
 
     function setTickerText(text) {
-      tickerEl.textContent = text;
-      // Speed: roughly 90 pixels per second, scaled to text length
+      // Duplicate the text back-to-back (with a gap) so the scroll can
+      // loop seamlessly at -50% -- see the updated @keyframes below.
+      const gap = '          '; // spacing between the end of one loop and the start of the next
+      tickerEl.textContent = text + gap + text + gap;
+      // Speed: roughly 90 pixels per second, scaled to a single copy's length
       const estimatedWidth = text.length * 13; // rough px estimate
       const duration = Math.max(20, estimatedWidth / 180);
       tickerEl.style.animation = 'none';
@@ -289,6 +292,7 @@
           !line.startsWith('Title:') &&
           !line.startsWith('URL Source:') &&
           !line.startsWith('Markdown Content:') &&
+          !line.startsWith('Warning:') &&
           !line.startsWith('[') &&
           line !== 'Published using Google Docs' &&
           line !== 'Report abuse' &&
@@ -321,6 +325,19 @@
 
     fetchBulletin();
     setInterval(fetchBulletin, REFRESH_MS);
+
+    // =========================================================
+    // AUTO-REFRESH: reloads the whole page on a schedule so any
+    // new deploy (updated index.html, changed image, etc.) gets
+    // picked up automatically -- no need to physically visit the
+    // Chromebook. Adjust the hours below to whatever cadence makes
+    // sense; a smaller number means changes show up faster but the
+    // screen blips/reconnects more often.
+    // =========================================================
+    const AUTO_RELOAD_HOURS = 1;
+    setTimeout(() => {
+      location.reload(true); // true forces a fresh fetch, bypassing cache
+    }, AUTO_RELOAD_HOURS * 60 * 60 * 1000);
   </script>
 
 </body>
