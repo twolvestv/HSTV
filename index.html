@@ -19,7 +19,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: calc(100% - 60px);
+    height: calc(100% - 90px);
   }
 
   .slide {
@@ -89,7 +89,7 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 90px;
     background: #000000;
     color: #ffffff;
     display: flex;
@@ -105,7 +105,7 @@
     background: #1fbfb0;
     color: #000000;
     font-weight: bold;
-    font-size: 20px;
+    font-size: 30px;
     padding: 0 18px;
     height: 100%;
     display: flex;
@@ -127,7 +127,7 @@
     height: 100%;
     display: flex;
     align-items: center;
-    font-size: 22px;
+    font-size: 33px;
     padding-right: 100px;
     animation: scroll-left linear infinite;
     /* animation-duration is set dynamically in JS based on text length */
@@ -150,17 +150,29 @@
     </div>
 
     <div class="slide" id="slide-menu">
-      <img src="https://www.southwestvalley.org/images/library/aug_hs_08-2026.jpg" alt="Lunch Menu" onerror="this.dataset.broken='true';">
+      <img src="HS_MENU.png" alt="Lunch Menu" onerror="this.dataset.broken='true';">
     </div>
 
     <div class="slide" id="slide-welcome">
       
       <img src="Welcome HS.png" alt="Southwest Valley Wolves Logo" onerror="this.dataset.broken='true';">
     </div>
+
+    <div class="slide" id="slide-announcements">
+      <!--
+        Secretary's published Google Slides deck (3 slides, 10 sec each = 30 sec loop).
+        If she republishes with a different slide count or delay, update the
+        src below AND the ANNOUNCEMENTS_DURATION constant further down to match.
+      -->
+      <iframe
+        src="https://docs.google.com/presentation/d/e/2PACX-1vRj6DDl9iXkZUOjbLAHiNCJeKoHexfyWzqmjxvmcFNhp3yLt2lr08ZC53tEMZ9T_KLEgZFCZkGHKczh/pubembed?start=true&loop=true&delayms=10000"
+        allowfullscreen="true">
+      </iframe>
+    </div>
   </div>
 
   <div class="ticker-bar">
-    <div class="ticker-label">BULLETIN</div>
+    <div class="ticker-label">NEWS</div>
     <div class="ticker-track">
       <div class="ticker-content" id="ticker-content">Loading bulletin&hellip;</div>
     </div>
@@ -170,14 +182,16 @@
     // =========================================================
     // SLIDE ROTATION SETTINGS
     // =========================================================
-    const CALENDAR_DURATION = 8000; // 20 seconds
-    const MENU_DURATION = 8000;     // 15 seconds
-    const WELCOME_DURATION = 8000;  // 12 seconds
+    const CALENDAR_DURATION = 10000;
+    const MENU_DURATION = 10000;
+    const WELCOME_DURATION = 10000;
+    const ANNOUNCEMENTS_DURATION = 30000; // her deck: 3 slides x 10 sec each
 
     const slides = [
       { el: document.getElementById('slide-calendar'), duration: CALENDAR_DURATION },
       { el: document.getElementById('slide-menu'), duration: MENU_DURATION },
-      { el: document.getElementById('slide-welcome'), duration: WELCOME_DURATION }
+      { el: document.getElementById('slide-welcome'), duration: WELCOME_DURATION },
+      { el: document.getElementById('slide-announcements'), duration: ANNOUNCEMENTS_DURATION }
     ];
 
     let current = 0;
@@ -187,11 +201,27 @@
       return img && img.dataset.broken === 'true';
     }
 
+    // Base embed URL for the secretary's Slides deck, kept separately so
+    // we can re-append a cache-busting param each time we refresh it.
+    const ANNOUNCEMENTS_BASE_SRC = "https://docs.google.com/presentation/d/e/2PACX-1vRj6DDl9iXkZUOjbLAHiNCJeKoHexfyWzqmjxvmcFNhp3yLt2lr08ZC53tEMZ9T_KLEgZFCZkGHKczh/pubembed?start=true&loop=true&delayms=10000";
+
+    function refreshAnnouncementsFrame() {
+      const frame = document.querySelector('#slide-announcements iframe');
+      if (frame) {
+        frame.src = ANNOUNCEMENTS_BASE_SRC + "&cb=" + Date.now();
+      }
+    }
+
     function showSlide(index) {
       slides.forEach((s, i) => {
         s.el.classList.toggle('active', i === index);
       });
     }
+
+    // Preload lead time: the announcements iframe gets refreshed this many
+    // milliseconds BEFORE its slide is shown, so it's already fresh and
+    // sitting on slide 1 (still hidden) the instant it becomes visible.
+    const ANNOUNCEMENTS_PRELOAD_MS = 1000;
 
     function nextSlide() {
       let attempts = 0;
@@ -199,7 +229,17 @@
         current = (current + 1) % slides.length;
         attempts++;
       } while (slideIsBroken(slides[current].el) && attempts < slides.length);
+
       showSlide(current);
+
+      // If the slide AFTER this one is the announcements slide, schedule
+      // its preload-refresh to fire 1 second before it's due to appear.
+      const upcomingIndex = (current + 1) % slides.length;
+      if (slides[upcomingIndex].el.id === 'slide-announcements') {
+        const leadTime = slides[current].duration - ANNOUNCEMENTS_PRELOAD_MS;
+        setTimeout(refreshAnnouncementsFrame, Math.max(0, leadTime));
+      }
+
       setTimeout(nextSlide, slides[current].duration);
     }
 
@@ -215,7 +255,7 @@
     // the cross-origin permission issue for us.
     // =========================================================
 
-    const DOC_URL = "https://docs.google.com/document/d/e/2PACX-1vTVrvzPI9wy9MZ1kT2JcefS0ErqAfb6UMCPLMjQsbaHTjnGDTPLEgCwiBiHlng1VVJkG2wZNo5Qim7n/pub";
+    const DOC_URL = "https://docs.google.com/document/d/e/2PACX-1vTvZWh-Zi-5EMQnrsxI0lm9fXw38sra9ZLWzLfv77L4qTlkKIKmzsjcjqSVh-SDPcdA8zl1lJ91BAv7/pub";
     const PROXY_URL = "https://r.jina.ai/" + DOC_URL;
     const REFRESH_MS = 5 * 60 * 1000; // 5 minutes, matches the doc's own update cadence
 
