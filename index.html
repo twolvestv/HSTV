@@ -106,7 +106,7 @@
     color: #000000;
     font-weight: bold;
     font-size: 30px;
-    padding: 0 18px;
+    padding: 0 18px 0 30px;
     height: 100%;
     display: flex;
     align-items: center;
@@ -274,8 +274,15 @@
     // =========================================================
 
     const DOC_URL = "https://docs.google.com/document/d/e/2PACX-1vTvZWh-Zi-5EMQnrsxI0lm9fXw38sra9ZLWzLfv77L4qTlkKIKmzsjcjqSVh-SDPcdA8zl1lJ91BAv7/pub";
-    const PROXY_URL = "https://r.jina.ai/" + DOC_URL;
     const REFRESH_MS = 5 * 60 * 1000; // 5 minutes, matches the doc's own update cadence
+
+    // r.jina.ai caches its own responses per-URL for a few minutes. Appending
+    // a changing query param each time (same trick used above for the
+    // announcements iframe) makes every request a unique URL, so Jina can't
+    // serve a stale cached copy back to us.
+    function buildProxyUrl() {
+      return "https://r.jina.ai/" + DOC_URL + "?cb=" + Date.now();
+    }
 
     // Fallback text, captured from the live doc as of setup time.
     // Only shown if the live fetch fails.
@@ -312,6 +319,7 @@
           !line.startsWith('Markdown Content:') &&
           !line.startsWith('Warning:') &&
           !line.startsWith('[') &&
+          !line.includes('Updated automatically every') &&
           line !== 'Published using Google Docs' &&
           line !== 'Report abuse' &&
           line !== 'Learn more'
@@ -322,7 +330,7 @@
     }
 
     function fetchBulletin() {
-      fetch(PROXY_URL)
+      fetch(buildProxyUrl())
         .then(res => {
           if (!res.ok) throw new Error('Bad response');
           return res.text();
